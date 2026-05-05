@@ -1,86 +1,101 @@
-
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 
 TOKEN = "8778797228:AAGbU8kQOHqTIIWN9QX00hk4joR2g9zFFvw"
 CHANNEL = "@videozone6"
+BOT_USERNAME = "Video_zone6_bot"
+UPI = "paytm.s1v05xz@pty"
 
 users = {}
-members = []
 
+# 🔒 CHECK JOIN
 async def is_joined(user_id, context):
-    member = await context.bot.get_chat_member(CHANNEL, user_id)
-    return member.status in ["member", "administrator", "creator"]
+    try:
+        member = await context.bot.get_chat_member(CHANNEL, user_id)
+        return member.status in ["member", "administrator", "creator"]
+    except:
+        return False
 
+# 🚀 START
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
 
-    if user_id not in users:
-        users[user_id] = {"coins": 10}
-
     if not await is_joined(user_id, context):
-        buttons = [
-            [InlineKeyboardButton("📢 Join Channel", url=f"https://t.me/{CHANNEL[1:]}")],
-            [InlineKeyboardButton("✅ I Joined", callback_data="check")]
+        keyboard = [
+            [InlineKeyboardButton("📢 चैनल जॉइन करो", url="https://t.me/videozone6")],
+            [InlineKeyboardButton("✅ मैंने जॉइन कर लिया", callback_data="check")]
         ]
-        await update.message.reply_text("Pehle channel join karo", reply_markup=InlineKeyboardMarkup(buttons))
+        await update.message.reply_text(
+            "🚫 पहले चैनल जॉइन करो तभी bot use कर पाओगे 👇",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
         return
 
-    await menu(update)
+    if user_id not in users:
+        users[user_id] = {"coins": 0}
 
-async def menu(update):
-    buttons = [
-        [InlineKeyboardButton("🎬 Video", callback_data="video")],
-        [InlineKeyboardButton("📤 Refer", callback_data="refer")],
-        [InlineKeyboardButton("💰 Membership", callback_data="buy")],
-        [InlineKeyboardButton("🎁 Coins", callback_data="coins")]
+    keyboard = [
+        [InlineKeyboardButton("🎥 वीडियो देखो", callback_data="video")],
+        [InlineKeyboardButton("👥 रेफर करो", callback_data="refer")],
+        [InlineKeyboardButton("💰 मेरे कॉइन", callback_data="coins")],
+        [InlineKeyboardButton("🛒 कॉइन खरीदो", callback_data="buy")],
+        [InlineKeyboardButton("📞 सपोर्ट", callback_data="support")]
     ]
-    await update.message.reply_text("Select option", reply_markup=InlineKeyboardMarkup(buttons))
 
-async def check(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "🔥 Welcome भाई 😎\nनीचे से option चुनो:",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+
+# 🔘 BUTTON HANDLER
+async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     user_id = query.from_user.id
+    await query.answer()
 
-    if await is_joined(user_id, context):
-        await query.message.reply_text("Welcome 🔥")
-        await menu(query)
-    else:
-        await query.answer("Join nahi kiya 😅", show_alert=True)
+    if query.data == "check":
+        if await is_joined(user_id, context):
+            await query.message.reply_text("✅ अब /start दबाओ")
+        else:
+            await query.message.reply_text("❌ अभी तक चैनल जॉइन नहीं किया")
+        return
 
-async def video(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    user_id = query.from_user.id
+    if not await is_joined(user_id, context):
+        await query.message.reply_text("🚫 पहले चैनल जॉइन करो")
+        return
 
-    if user_id in members:
-        await query.message.reply_text("Unlimited video 🎬")
-    elif users[user_id]["coins"] > 0:
-        users[user_id]["coins"] -= 1
-        await query.message.reply_text(f"Video 🎬\nCoins left: {users[user_id]['coins']}")
-    else:
-        await query.message.reply_text("Coins nahi 😅 Refer karo ya membership lo")
+    if user_id not in users:
+        users[user_id] = {"coins": 0}
 
-async def refer(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    user_id = query.from_user.id
-    link = f"https://t.me/Video_zone6_bot?start={user_id}"
-    await query.message.reply_text(f"Invite link:\n{link}\n1 refer = 5 coins")
+    if query.data == "video":
+        users[user_id]["coins"] += 1
+        await query.message.reply_text("🎥 वीडियो देखा! +1 कॉइन मिला")
 
-async def coins(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    user_id = query.from_user.id
-    await query.message.reply_text(f"Coins: {users[user_id]['coins']}")
+    elif query.data == "refer":
+        link = f"https://t.me/{BOT_USERNAME}?start={user_id}"
+        await query.message.reply_text(f"👥 आपका रेफर लिंक:\n{link}")
 
-async def buy(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.message.reply_text("₹99 Paytm kara ani screenshot pathva")
+    elif query.data == "coins":
+        await query.message.reply_text(f"💰 आपके कॉइन: {users[user_id]['coins']}")
 
+    elif query.data == "buy":
+        await query.message.reply_text(
+            f"💸 पेमेंट करो:\n\nUPI: {UPI}\n\nPayment के बाद screenshot भेजो"
+        )
+
+    elif query.data == "support":
+        keyboard = [
+            [InlineKeyboardButton("📩 Contact Support", url="https://t.me/Trusted_sellarr")]
+        ]
+        await query.message.reply_text(
+            "📞 Support से बात करने के लिए नीचे क्लिक करो 👇",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+
+# ▶️ MAIN
 app = ApplicationBuilder().token(TOKEN).build()
 
 app.add_handler(CommandHandler("start", start))
-app.add_handler(CallbackQueryHandler(check, pattern="check"))
-app.add_handler(CallbackQueryHandler(video, pattern="video"))
-app.add_handler(CallbackQueryHandler(refer, pattern="refer"))
-app.add_handler(CallbackQueryHandler(coins, pattern="coins"))
-app.add_handler(CallbackQueryHandler(buy, pattern="buy"))
+app.add_handler(CallbackQueryHandler(button))
 
 app.run_polling()
