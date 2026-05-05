@@ -98,4 +98,18 @@ app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CallbackQueryHandler(button))
 
-app.run_polling()
+import asyncio
+
+async def main():
+    app = ApplicationBuilder().token(TOKEN).build()
+
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CallbackQueryHandler(video, pattern="video"))
+    app.add_handler(CallbackQueryHandler(refer, pattern="refer"))
+    app.add_handler(CallbackQueryHandler(coins, pattern="coins"))
+    app.add_handler(CallbackQueryHandler(buy, pattern="buy"))
+
+    await app.run_polling()
+
+if __name__ == "__main__":
+    asyncio.run(main())
